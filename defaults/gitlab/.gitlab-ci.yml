@@ -2,7 +2,10 @@
 #
 # This job is only ever started by the Worker's /add/submit handler via the GitLab
 # Pipeline Trigger API, which passes SUBMIT_URL and SUBMIT_SLUG as trigger variables.
-# It never runs on an ordinary push pipeline.
+# The workflow rule below stops a pipeline from being created at all for an ordinary
+# push — including the push this job itself makes — since without it GitLab still spins
+# up an empty pipeline for that commit (a job-level `rules:` only skips the job, not the
+# pipeline shell).
 #
 # Setup:
 #   - A Pipeline Trigger Token, stored as the Cloudflare Worker secret GITLAB_TRIGGER_TOKEN.
@@ -12,6 +15,10 @@
 #     is withheld from pipelines running on it and the push step fails with an empty token.
 #   - Optionally, a V8S_LINKS_OWNER CI/CD variable to attribute these commits to your usual
 #     owner tag (defaults to "bhd" otherwise, same as running v8s-lnk locally without it set).
+workflow:
+  rules:
+    - if: "$SUBMIT_URL && $SUBMIT_SLUG"
+
 add-link:
   image: node:24
   rules:
